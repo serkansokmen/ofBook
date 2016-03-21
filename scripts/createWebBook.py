@@ -150,6 +150,10 @@ cssFile.close()
 print("output " + outputCssFile)
 
 
+
+
+
+
 chapterDicts = [];
 
 #-------------------------------------------------------------- make the book
@@ -419,9 +423,14 @@ wrapperDiv['class'] = "toc-wrapper"
 # Run through the chapter groups
 for group in chapterGroups:
 
+
+	tocSection = Tag(soup, None, "div");
+	tocSection['class'] = "tocSection"
+
+
 	h3 = Tag(soup, None, "h3")
 	h3.append(group['groupName'])
-	wrapperDiv.append(h3)
+	tocSection.append(h3)
 
 	ul = Tag(soup, None, "ul");
 
@@ -441,39 +450,66 @@ for group in chapterGroups:
 		else:
 			print(chap)
 
-	wrapperDiv.append(ul)
+	tocSection.append(ul)
+	wrapperDiv.append(tocSection);
 
 soup.append(wrapperDiv)
 
+#print(soup.prettify("utf-8"));
+
 htmlOut = soup.prettify("utf-8")
-tocPath = os.path.join(webBookPath, "toc.html")
+
+tocPathTemp = os.path.join(webBookPath, "tocTemp.html")
+tocPath = os.path.join(os.path.join(webBookPath, "chapters"), "toc.html")
 print("toc path")
 print(tocPath)
-with open(tocPath, "wb") as file:
+with open(tocPathTemp, "wb") as file:
     file.write(htmlOut)
 
 
+
+
+
+filenames = ['createWebBookTemplate/IncludeBeforeBodyTOC.html', tocPathTemp, 'createWebBookTemplate/IncludeAfterBodyTOC.html']
+with open(tocPath, 'w') as outfile:
+    for fname in filenames:
+        with open(fname) as infile:
+            outfile.write(infile.read())
+
+os.remove(tocPathTemp);
 #----------------------------------------------------- run pandoc for TOC
 
-destTocPath = os.path.join(webBookPath, "chapters", "toc.html")
-sourceTocPath = os.path.join(webBookPath, "toc.html")
+# destTocPath = os.path.join(webBookPath, "chapters", "toc.html")
+# sourceTocPath = os.path.join(webBookPath, "toc.html")
 
-print("Converting", sourceTocPath, "to", destTocPath, "...")
+# print("Converting", sourceTocPath, "to", destTocPath, "...")
 
-subprocess.call(["pandoc", "-o", destTocPath, sourceTocPath,
-                                    "-s", "-p",
-                                    "--include-in-header=createWebBookTemplate/IncludeInHeader.html",
-                                    "--include-before-body=createWebBookTemplate/IncludeBeforeBodyTOC.html",
-                                    "--include-after-body=createWebBookTemplate/IncludeAfterBodyTOC.html",
-                                    "--template=createWebBookTemplate/default.html"])
+# # subprocess.call(["pandoc", "-o", destTocPath, sourceTocPath,
+# #                                     "-s", "-p",
+# #                                     "--include-in-header=createWebBookTemplate/IncludeInHeader.html",
+# #                                     "--include-before-body=createWebBookTemplate/IncludeBeforeBodyTOC.html",
+# #                                     "--include-after-body=createWebBookTemplate/IncludeAfterBodyTOC.html",
+# #                                     "--template=createWebBookTemplate/default.html"])
 
-print("Removing", sourceTocPath, "...")
-os.remove(sourceTocPath)
+# print("Removing", sourceTocPath, "...")
+# os.remove(sourceTocPath)
 
 #----------------------------------------------------- copy index redirect to TOC
 
 destPath = os.path.join(webBookPath, "index.html")
 sourcePath = os.path.join("createWebBookTemplate", "index.html")
 
-print("Copying", sourcePath, "to", destPath, "...")
-shutil.copyfile(sourcePath, destPath)
+# print("Copying", sourcePath, "to", destPath, "...")
+# shutil.copyfile(sourcePath, destPath)
+
+bookBaseUrl = "http://openframeworks.cc/ofBook/chapters/";
+
+for group in chapterGroups:
+    print("- " + group['groupName']);
+    for chap in group['chapters']:
+        c = returnChapterByCommonName(chap)
+        print("\t- [" +c['title'] +"](" + bookBaseUrl + c['href'] + ")");
+        
+        #print(c['href'])
+#print()
+
